@@ -24,7 +24,6 @@ class HomeViewModel: ObservableObject {
 
     @Published var showCodeForQR = false
     @Published var idForQR: Int?
-    @Published var alertMessage: String?
 
     @Published var products: [any ProductProtocol] = []
     @Published var allProducts: [any ProductProtocol] = []
@@ -105,7 +104,7 @@ class HomeViewModel: ObservableObject {
                 })
             navigationPresented = true
         } else {
-            alertMessage = ErrorLogger.notFoundedProduct.rawValue
+            self.errorMessage = ErrorLogger.notFoundedProduct.rawValue
         }
 
         idForQR = nil

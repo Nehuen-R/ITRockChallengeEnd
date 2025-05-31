@@ -29,7 +29,7 @@ class QRScannerViewModel: ObservableObject {
     func validateQR(_ qrValue: String) -> (Country, Int)? {
         let components = qrValue.split(separator: ":").map { String($0.lowercased()) }
         guard components.count == 2,
-              let country = Country(rawValue: components[0].capitalized),
+              let country = Country(rawValue: components[0]),
               let id = Int(components[1]) else {
             return nil
         }

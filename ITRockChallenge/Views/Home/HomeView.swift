@@ -18,21 +18,27 @@ struct HomeView: View {
             Group {
                 if viewModel.hasSelectedCountry {
                     Group {
-                        if let errorMessage = viewModel.errorMessage {
-                            errorView(errorMessage)
-                        } else if viewModel.fetchingData {
-                            ProgressView()
-                                .foregroundStyle(.black)
-                                .tint(.black)
-                        } else {
-                            mainView
-                            .safeAreaInset(edge: .bottom) {
-                                bottomBar
+                        ZStack {
+                            if viewModel.fetchingData {
+                                ProgressView()
+                                    .foregroundStyle(.black)
+                                    .tint(.black)
+                            } else {
+                                mainView
+                                    .safeAreaInset(edge: .bottom) {
+                                        bottomBar
+                                    }
+                            }
+                            
+                            if let errorMessage = viewModel.errorMessage {
+                                errorView(errorMessage)
                             }
                         }
                     }
                     .onAppear {
-                        viewModel.fetchData()
+                        if viewModel.errorMessage == nil && viewModel.idForQR == nil {
+                            viewModel.fetchData()
+                        }
                     }
                 } else {
                     viewModel.makeWrapper(for: .countrySelector(context: context))
@@ -50,17 +56,30 @@ struct HomeView: View {
     }
     
     @ViewBuilder func errorView(_ errorMessage: String) -> some View {
-        VStack {
-            Spacer()
-            Text(errorMessage)
-                .foregroundStyle(.red)
-                .bold()
-            Button(action:{
-                viewModel.fetchData()
-            }){
-                Text("Retry")
+        ZStack {
+            Rectangle()
+                .fill(Material.ultraThin)
+                .ignoresSafeArea(.all)
+                .onTapGesture {
+                    viewModel.fetchData()
+                }
+                
+            VStack {
+                Spacer()
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+                    .bold()
+                    .padding()
+                Button(action:{
+                    viewModel.fetchData()
+                }){
+                    Text("Retry")
+                        .foregroundStyle(.black)
+                }
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 20).fill(.gray))
+                Spacer()
             }
-            Spacer()
         }
     }
     
