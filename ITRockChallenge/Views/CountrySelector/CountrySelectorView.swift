@@ -34,10 +34,17 @@ class CountrySelectorView: UIViewController {
 
     @IBAction func tapCountryA(_ sender: Any) {
         viewModel.selectCountry(.countryA)
+        if let onSuccess = viewModel.onSuccess {
+            onSuccess()
+        }
+        
     }
 
     @IBAction func tapCountryB(_ sender: Any) {
         viewModel.selectCountry(.countryB)
+        if let onSuccess = viewModel.onSuccess {
+            onSuccess()
+        }
     }
 }
 

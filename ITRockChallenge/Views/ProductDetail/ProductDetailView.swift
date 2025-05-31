@@ -8,8 +8,6 @@
 import UIKit
 
 class ProductDetailView: UIViewController {
-    var productSelected: ProductProtocol?
-    
     @IBOutlet weak var detailTitle: UILabel!
     @IBOutlet weak var detailDescription: UILabel!
     @IBOutlet weak var detailCategory: UILabel!
@@ -17,62 +15,51 @@ class ProductDetailView: UIViewController {
     @IBOutlet weak var detailImage: UIImageView!
     @IBOutlet weak var purchaseButton: UIButton!
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        guard let product = productSelected else { return }
-
-        detailTitle.text = product.title
-        detailDescription.text = product.description
-        
-        if let productA = product as? ProductA {
-            let attachment = NSTextAttachment()
-            attachment.image = UIImage(systemName: "star.fill")?.withTintColor(.systemYellow)
-            attachment.bounds = CGRect(x: 0, y: -4, width: 22, height: 22)
-
-            let attachmentString = NSAttributedString(attachment: attachment)
-            let ratingString = NSMutableAttributedString(string: " ")
-            ratingString.append(attachmentString)
-            ratingString.append(NSAttributedString(string: " \(productA.rating.rate) (\(productA.rating.count) reviews)"))
-
-            detailRating.attributedText = ratingString
-            detailCategory.isHidden = true
-        }
-        
-        if let productB = product as? ProductB {
-            detailCategory.text = productB.category.name
-            detailRating.isHidden = true
-        }
-        
-        if let url = URL(string: product.image) {
-            URLSession.shared.dataTask(with: url) { data, _, error in
-                DispatchQueue.main.async {
-                    if let data = data, error == nil, let image = UIImage(data: data) {
-                        self.detailImage.image = image
-                    } else {
-                        self.detailImage.image = UIImage(systemName: "xmark.octagon")
-                        self.detailImage.tintColor = .red
-                    }
-                }
-            }.resume()
-        } else {
-            self.detailImage.image = UIImage(systemName: "xmark.octagon")
-            self.detailImage.tintColor = .red
-        }
-        
-        purchaseButton.titleLabel?.text = "Comprar"
-        purchaseButton.layer.cornerRadius = 10
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-    }
-    
-    @IBAction func paymentTapped(_ sender: Any) {
-        let storyboard = UIStoryboard(name: "Payment", bundle: nil)
-        if let paymentV = storyboard.instantiateViewController(withIdentifier: "PaymentView") as? PaymentView {
-            paymentV.product = productSelected
-            navigationController?.pushViewController(paymentV, animated: true)
-        }
-    }
+    var viewModel: ProductDetailViewModel!
+       
+       override func viewDidLoad() {
+           super.viewDidLoad()
+           
+           detailTitle.text = viewModel.titleText
+           detailDescription.text = viewModel.descriptionText
+           
+           detailCategory.isHidden = !viewModel.shouldShowCategory
+           detailCategory.text = viewModel.categoryText
+           
+           detailRating.isHidden = !viewModel.shouldShowRating
+           detailRating.attributedText = viewModel.ratingText
+           
+           if let url = viewModel.imageURL {
+               URLSession.shared.dataTask(with: url) { data, _, error in
+                   DispatchQueue.main.async {
+                       if let data = data, let image = UIImage(data: data), error == nil {
+                           self.detailImage.image = image
+                       } else {
+                           self.detailImage.image = UIImage(systemName: "xmark.octagon")
+                           self.detailImage.tintColor = .red
+                       }
+                   }
+               }.resume()
+           } else {
+               detailImage.image = UIImage(systemName: "xmark.octagon")
+               detailImage.tintColor = .red
+           }
+           
+           purchaseButton.setTitle("Comprar", for: .normal)
+           purchaseButton.layer.cornerRadius = 10
+           
+           [detailTitle, detailDescription, detailCategory, detailRating, detailImage, purchaseButton].forEach {
+               $0?.backgroundColor = .gray.withAlphaComponent(0.25)
+               $0?.layer.cornerRadius = 20
+               $0?.layer.masksToBounds = true
+           }
+       }
+       
+       @IBAction func paymentTapped(_ sender: Any) {
+           let storyboard = UIStoryboard(name: "Payment", bundle: nil)
+           if let paymentV = storyboard.instantiateViewController(withIdentifier: "PaymentView") as? PaymentView {
+               paymentV.product = viewModel.product
+               navigationController?.pushViewController(paymentV, animated: true)
+           }
+       }
 }

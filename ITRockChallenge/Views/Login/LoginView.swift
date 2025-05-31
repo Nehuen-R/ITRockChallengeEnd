@@ -19,8 +19,19 @@ class LoginView: UIViewController, UITextFieldDelegate {
         return (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     }()
     
+    private var viewModel: LoginViewModel!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        viewModel = LoginViewModel(context: context)
+        setupUI()
+        
+        if viewModel.isUserLoggedIn() {
+            viewModel.navigateToHome()
+        }
+    }
+    
+    func setupUI() {
         view.backgroundColor = .gray
         passwordTextField.isSecureTextEntry = true
         passwordTextField.textContentType = .password
@@ -28,24 +39,14 @@ class LoginView: UIViewController, UITextFieldDelegate {
         passwordTextField.delegate = self
         
         errorLabel.isHidden = true
-        
         loginButton.backgroundColor = .black
-        loginButton.titleLabel?.textColor = .white
+        loginButton.setTitleColor(.white, for: .normal)
         loginButton.layer.cornerRadius = 10
-        GlobalViewModel.shared.loadData(context,
-                                        entityName: CoreDataEntitys.user.rawValue,
-                                        key: CoreDataEntitys.username.rawValue,
-                                        type: String.self) { username in
-            if username != nil {
-                sendHome()
-            }
-        } failure: { }
-
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
-        loginTapped(UIButton())
+        loginTapped(loginButton)
         return true
     }
     
@@ -54,31 +55,16 @@ class LoginView: UIViewController, UITextFieldDelegate {
     }
     
     @IBAction func loginTapped(_ sender: UIButton) {
-        let username = usernameTextField.text?.lowercased() ?? ""
-        let password = passwordTextField.text ?? ""
+        viewModel.username = usernameTextField.text ?? ""
+        viewModel.password = passwordTextField.text ?? ""
         
-        if username == "admin" && password == "1234" {
-            GlobalViewModel.shared.saveData(context,
-                                            entityName: CoreDataEntitys.user.rawValue,
-                                            key: CoreDataEntitys.username.rawValue,
-                                            value: "admin") {
-                sendHome()
-            } failure: {
-                sendHome()
-            }
+        if viewModel.login() {
+            viewModel.navigateToHome()
         } else {
+            errorLabel.text = viewModel.errorMessage
             errorLabel.textColor = .red
             errorLabel.backgroundColor = .black
-            errorLabel.text = "Usuario o contraseña incorrectos"
             errorLabel.isHidden = false
-        }
-    }
-    
-    func sendHome() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.rootViewController = UIHostingController(rootView: HomeView().environment(\.managedObjectContext, context))
-            window.makeKeyAndVisible()
         }
     }
 }

@@ -1,32 +1,36 @@
-//
-//  QRScannerView.swift
-//  ITRockChallenge
-//
-//  Created by nehuen roth on 28/05/2025.
-//
-
 import UIKit
 import AVFoundation
+import Combine
 
 class QRScannerView: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
-    var onProductDetected: ((String) -> Void)?
+
+    var viewModel = QRScannerViewModel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         view.backgroundColor = .black
+
+        viewModel.$errorMessage.sink { [weak self] errorMessage in
+            guard let self = self else { return }
+            if let error = errorMessage {
+                self.showAlert(message: error)
+            }
+        }.store(in: &subscriptions)
+
         checkCameraPermissionAndStart()
     }
-    
+
+    var subscriptions = Set<AnyCancellable>()
+
     func checkCameraPermissionAndStart() {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
 
         switch status {
         case .authorized:
             startScanning()
-            
+
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 DispatchQueue.main.async {
@@ -45,7 +49,7 @@ class QRScannerView: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
             break
         }
     }
-    
+
     func showCameraAccessDeniedAlert() {
         let alert = UIAlertController(
             title: "Acceso a la cámara denegado",
@@ -67,7 +71,7 @@ class QRScannerView: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         present(alert, animated: true)
         captureSession = nil
     }
-    
+
     func startScanning() {
         captureSession = AVCaptureSession()
 
@@ -110,14 +114,19 @@ class QRScannerView: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         }
     }
 
-    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
-
+    func metadataOutput(_ output: AVCaptureMetadataOutput,
+                        didOutput metadataObjects: [AVMetadataObject],
+                        from connection: AVCaptureConnection) {
+        guard viewModel.isScanningActive else { return }
+        
         if let metadataObject = metadataObjects.first,
            let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
            let stringValue = readableObject.stringValue {
+            
+            captureSession.stopRunning()
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-            onProductDetected?(stringValue)
+            
+            viewModel.handleScannedQR(stringValue)
         }
     }
 
@@ -127,5 +136,18 @@ class QRScannerView: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         if captureSession?.isRunning == true {
             captureSession.stopRunning()
         }
+    }
+
+    private func showAlert(message: String) {
+        let alert = UIAlertController(title: "Error QR", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Reintentar", style: .default) { _ in
+            self.viewModel.resetScanner()
+            if !self.captureSession.isRunning {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    self.captureSession.startRunning()
+                }
+            }
+        })
+        present(alert, animated: true)
     }
 }

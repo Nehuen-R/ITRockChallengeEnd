@@ -17,11 +17,6 @@ protocol ProductProtocol {
     var country: Country? { get set }
 }
 
-protocol ProdductDisplayable {
-    var priceText: String { get }
-    var image: String { get }
-}
-
 struct ProductA: Decodable, ProductProtocol {
     let id: Int
     let title: String

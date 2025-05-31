@@ -8,60 +8,43 @@
 import SwiftUI
 
 struct ProductRow: View {
-    let product: ProductProtocol
     @Binding var showCodeForQR: Bool
+    @StateObject var viewModel: ProductRowViewModel
     
-    @State private var compressedImage: UIImage?
-
     var body: some View {
         VStack(alignment: .leading) {
             if showCodeForQR {
-                Text("\(product.country?.rawValue ?? ""):\(product.id)")
+                Text(viewModel.codeQRText)
                     .foregroundColor(.primary)
             }
             HStack(alignment: .center) {
-                if let uiImage = compressedImage {
+                if let uiImage = viewModel.compressedImage {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 80, height: 80)
                         .clipped()
+                } else if viewModel.isLoading {
+                    ProgressView()
+                        .frame(width: 80, height: 80)
+                } else if viewModel.hasError {
+                    Image(systemName: "xmark.octagon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.red)
                 } else {
-                    AsyncImage(url: URL(string: product.image)) { phase in
-                        if let image = phase.image {
-                            Color.clear
-                                .frame(width: 80, height: 80)
-                                .onAppear {
-                                    DispatchQueue.main.async {
-                                        let image = image.asUIImage()
-                                        DispatchQueue.global(qos: .userInitiated).async {
-                                            if let compressed = compressImage(image, compressionQuality: 0.5) {
-                                                DispatchQueue.main.async {
-                                                    self.compressedImage = compressed
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                        } else if phase.error != nil {
-                            Image(systemName: "xmark.octagon")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 80, height: 80)
-                                .foregroundColor(.red)
-                        } else {
-                            ProgressView()
-                                .frame(width: 80, height: 80)
-                                .redacted(reason: .placeholder)
-                        }
-                    }
+                    Color.clear
+                        .frame(width: 80, height: 80)
                 }
+                
                 VStack(alignment: .leading) {
-                    Text(product.title)
+                    Text(viewModel.title)
                         .font(.headline)
                         .foregroundColor(.primary)
                         .lineLimit(2)
-                    Text(product.priceText)
+                        .multilineTextAlignment(.leading)
+                    Text(viewModel.priceText)
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -70,12 +53,4 @@ struct ProductRow: View {
         }
         .padding()
     }
-    
-    func compressImage(_ image: UIImage, compressionQuality: CGFloat = 0.5) -> UIImage? {
-        guard let jpegData = image.jpegData(compressionQuality: compressionQuality) else {
-            return nil
-        }
-        return UIImage(data: jpegData)
-    }
 }
-

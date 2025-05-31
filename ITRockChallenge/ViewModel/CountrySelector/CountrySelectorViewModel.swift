@@ -19,15 +19,9 @@ class CountrySelectorViewModel {
     }
 
     func selectCountry(_ country: Country) {
-        GlobalViewModel.shared.saveData(
-            context,
-            entityName: CoreDataEntitys.persisted.rawValue,
-            key: CoreDataEntitys.selectedCountry.rawValue,
-            value: country.rawValue
-        ) { [weak self] in
-            self?.onSuccess?()
-        } failure: { [weak self] in
-            self?.onFailure?()
-        }
+        StorageService.shared.save(context: context,
+                                   entity: CoreDataEntitys.persisted.rawValue,
+                                   key: CoreDataEntitys.selectedCountry.rawValue,
+                                   value: country.rawValue)
     }
 }

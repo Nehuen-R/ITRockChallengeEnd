@@ -10,6 +10,7 @@ import CoreData
 
 struct HomeView: View {
     @Environment(\.managedObjectContext) private var context
+    @Environment(\.colorScheme) var colorScheme
     @StateObject var viewModel = HomeViewModel()
     
     var body: some View {
@@ -17,72 +18,16 @@ struct HomeView: View {
             Group {
                 if viewModel.hasSelectedCountry {
                     Group {
-                        if viewModel.fetchingData {
+                        if let errorMessage = viewModel.errorMessage {
+                            errorView(errorMessage)
+                        } else if viewModel.fetchingData {
                             ProgressView()
                                 .foregroundStyle(.black)
                                 .tint(.black)
                         } else {
-                            VStack {
-                                Toggle(isOn: $viewModel.showCodeForQR) {
-                                    Text("Show code for QR")
-                                }
-                                .padding()
-                                ScrollView {
-                                    LazyVStack(alignment: .leading, spacing: 12) {
-                                        ForEach(viewModel.products, id: \.id) { product in
-                                            Button(action:{
-                                                viewModel.detailSelected = product
-                                                viewModel.navigationDestination = AnyView(
-                                                    UIViewControllerWrapper(storyboardName: "ProductDetail",
-                                                                            identifier: "ProductDetailView") {
-                                                                                (controller: ProductDetailView) in
-                                                                                if let selectedDetail = viewModel.detailSelected {
-                                                                                    controller.productSelected = selectedDetail
-                                                                                }
-                                                                            })
-                                                viewModel.navigationPresented = true
-                                            }){
-                                                ProductRow(product: product, showCodeForQR: $viewModel.showCodeForQR)
-                                                    .onAppear {
-                                                        viewModel.loadMoreProductsIfNeeded(currentProduct: product)
-                                                    }
-                                            }
-                                        }
-                                        
-                                        if viewModel.products.count < viewModel.allProducts.count {
-                                            ProgressView()
-                                                .padding()
-                                        }
-                                    }
-                                }
-                            }
+                            mainView
                             .safeAreaInset(edge: .bottom) {
-                                HStack {
-                                    Button(action:{
-                                        viewModel.hasSelectedCountry = false
-                                    }){
-                                        Text(viewModel.selectedCountry?.rawValue ?? "")
-                                    }
-                                    .padding()
-                                    
-                                    Button(action:{
-                                        viewModel.navigationDestination = AnyView(
-                                            UIViewControllerWrapper(storyboardName: nil,
-                                                                    identifier: "QRScannerView",
-                                                                    configure: { (controller: QRScannerView) in
-                                                                        controller.onProductDetected = { qrValue in
-                                                                            viewModel.processQR(context, qrValue: qrValue)
-                                                                        }
-                                                                    }))
-                                        viewModel.navigationPresented = true
-                                    }){
-                                        Image(systemName: "qrcode.viewfinder")
-                                    }
-                                    .padding()
-                                }
-                                .background {
-                                    RoundedRectangle(cornerRadius: 20)
-                                }
+                                bottomBar
                             }
                         }
                     }
@@ -90,12 +35,7 @@ struct HomeView: View {
                         viewModel.fetchData()
                     }
                 } else {
-                    UIViewControllerWrapper(storyboardName: "CountrySelector",
-                                            identifier: "CountrySelectorView") { (controller: CountrySelectorView) in
-                        controller.onCountrySelected = {
-                            viewModel.loadData(context)
-                        }
-                    }
+                    viewModel.makeWrapper(for: .countrySelector(context: context))
                 }
             }
             .onAppear {
@@ -107,6 +47,90 @@ struct HomeView: View {
                 viewModel.navigationDestination
             }
         }
+    }
+    
+    @ViewBuilder func errorView(_ errorMessage: String) -> some View {
+        VStack {
+            Spacer()
+            Text(errorMessage)
+                .foregroundStyle(.red)
+                .bold()
+            Button(action:{
+                viewModel.fetchData()
+            }){
+                Text("Retry")
+            }
+            Spacer()
+        }
+    }
+    
+    @ViewBuilder var mainView: some View {
+        VStack {
+            Toggle(isOn: $viewModel.showCodeForQR) {
+                Text("Show code for QR")
+            }
+            .padding()
+            .background {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(colorScheme == .light ? .black.opacity(0.25) : .white.opacity(0.25))
+            }
+            .padding()
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(viewModel.products, id: \.id) { product in
+                        Button(action:{
+                            viewModel.detailSelected = product
+                            viewModel.navigationDestination = AnyView(viewModel.makeWrapper(for: .productDetail))
+                            viewModel.navigationPresented = true
+                        }){
+                            ProductRow(showCodeForQR: $viewModel.showCodeForQR, viewModel: ProductRowViewModel(product: product))
+                                .onAppear {
+                                    viewModel.loadMoreProductsIfNeeded(currentProduct: product)
+                                }
+                        }
+                        .background {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(colorScheme == .light ? .black.opacity(0.25) : .white.opacity(0.25))
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    if viewModel.products.count < viewModel.allProducts.count {
+                        ProgressView()
+                            .padding()
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder var bottomBar: some View {
+        HStack {
+            Button(action:{
+                viewModel.hasSelectedCountry = false
+            }){
+                Text(viewModel.selectedCountry?.displayName ?? "")
+            }
+            .padding()
+            
+            Spacer()
+            
+            Button(action:{
+                viewModel.navigationDestination = AnyView(viewModel.makeWrapper(for: .qrScanner(context: context)))
+                viewModel.navigationPresented = true
+            }){
+                Image(systemName: "qrcode.viewfinder")
+                    .resizable()
+                    .frame(width: 25, height: 25)
+            }
+            .padding()
+        }
+        .foregroundStyle(colorScheme == .light ? .white : .black)
+        .background {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(colorScheme == .light ? .black : .white )
+        }
+        .padding(.horizontal)
     }
 }
 
