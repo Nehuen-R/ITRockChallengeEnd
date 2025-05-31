@@ -96,7 +96,24 @@ struct HomeView: View {
             .padding()
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(viewModel.products, id: \.id) { product in
+                    if !viewModel.featuredProducts.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 16) {
+                                ForEach(viewModel.featuredProducts, id: \.id) { product in
+                                    Button(action: {
+                                        viewModel.detailSelected = product
+                                        viewModel.navigationDestination = AnyView(viewModel.makeWrapper(for: .productDetail))
+                                        viewModel.navigationPresented = true
+                                    }) {
+                                        ProductBannerView(showCodeForQR: $viewModel.showCodeForQR, viewModel: ProductRowViewModel(product: product))
+                                            .frame(width: 300, height: 250)
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
+                    }
+                    ForEach(viewModel.regularProducts, id: \.id) { product in
                         Button(action:{
                             viewModel.detailSelected = product
                             viewModel.navigationDestination = AnyView(viewModel.makeWrapper(for: .productDetail))

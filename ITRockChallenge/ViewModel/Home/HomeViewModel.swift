@@ -27,6 +27,12 @@ class HomeViewModel: ObservableObject {
 
     @Published var products: [any ProductProtocol] = []
     @Published var allProducts: [any ProductProtocol] = []
+    var featuredProducts: [any ProductProtocol] {
+        allProducts.filter { $0.isFeatured ?? false }
+    }
+    var regularProducts: [any ProductProtocol] {
+        products.filter { !($0.isFeatured ?? false) }
+    }
     private var currentPage = 0
     private let pageSize = 7
 
@@ -129,8 +135,16 @@ class HomeViewModel: ObservableObject {
     }
 
     func resetPagination(with data: [any ProductProtocol]) {
-        allProducts = data
-        products = []
+        var products = data
+        let featuredCount = min(3, products.count)
+        let featuredIndexes = Set((0..<products.count).shuffled().prefix(featuredCount))
+
+        for (index, product) in products.enumerated() {
+            products[index].isFeatured = featuredIndexes.contains(index)
+        }
+
+        allProducts = products
+        self.products = []
         currentPage = 0
         loadNextPage()
     }

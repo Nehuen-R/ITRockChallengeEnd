@@ -15,6 +15,7 @@ protocol ProductProtocol {
     var priceText: String { get }
     var image: String { get }
     var country: Country? { get set }
+    var isFeatured: Bool? { get set }
 }
 
 struct ProductA: Decodable, ProductProtocol {
@@ -27,6 +28,7 @@ struct ProductA: Decodable, ProductProtocol {
     let rating: Rating
     var priceText: String { "$\(price)"}
     var country: Country?
+    var isFeatured: Bool?
 }
 
 struct Rating: Decodable {
@@ -45,6 +47,7 @@ struct ProductB: Decodable, ProductProtocol {
     var priceText: String { "$\(price)"}
     var image: String { images.first ?? "" }
     var country: Country?
+    var isFeatured: Bool?
 }
 
 struct Category: Decodable {
