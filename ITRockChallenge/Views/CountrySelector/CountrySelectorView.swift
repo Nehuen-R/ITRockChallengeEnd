@@ -10,32 +10,34 @@ import CoreData
 
 class CountrySelectorView: UIViewController {
     var onCountrySelected: (() -> Void)?
-    
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    private var viewModel: CountrySelectorViewModel!
 
-    
     @IBOutlet weak var countryA: UIButton!
     @IBOutlet weak var countryB: UIButton!
     
-    @IBAction func tapCountryA(_ sender: Any) {
-        GlobalViewModel.shared.saveData(context,
-                                        entityName: CoreDataEntitys.persisted.rawValue,
-                                        key: CoreDataEntitys.selectedCountry.rawValue,
-                                        value: Country.countryA.rawValue) {
-            onCountrySelected?()
-        } failure: {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        viewModel = CountrySelectorViewModel(context: context)
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        viewModel.onSuccess = { [weak self] in
+            self?.onCountrySelected?()
+        }
+
+        viewModel.onFailure = {
             
         }
     }
-    
+
+    @IBAction func tapCountryA(_ sender: Any) {
+        viewModel.selectCountry(.countryA)
+    }
+
     @IBAction func tapCountryB(_ sender: Any) {
-        GlobalViewModel.shared.saveData(context,
-                                        entityName: CoreDataEntitys.persisted.rawValue,
-                                        key: CoreDataEntitys.selectedCountry.rawValue,
-                                        value: Country.countryB.rawValue) {
-            onCountrySelected?()
-        } failure: {
-            
-        }
+        viewModel.selectCountry(.countryB)
     }
 }
+

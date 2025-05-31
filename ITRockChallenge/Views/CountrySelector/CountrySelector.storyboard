@@ -31,7 +31,7 @@
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Country B"/>
                                 <connections>
-                                    <action selector="tapCountryB:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="z7Y-O0-p3m"/>
+                                    <action selector="tapCountryB:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="A3m-j9-hT9"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -39,8 +39,8 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <connections>
-                        <outlet property="countryA" destination="cHl-L6-hOe" id="wdh-KC-p1V"/>
-                        <outlet property="countryB" destination="XTv-mz-g39" id="MYY-JR-K9i"/>
+                        <outlet property="countryA" destination="cHl-L6-hOe" id="cpC-Ug-6w1"/>
+                        <outlet property="countryB" destination="XTv-mz-g39" id="TVF-Um-KHK"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
