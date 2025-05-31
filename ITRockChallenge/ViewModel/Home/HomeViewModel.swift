@@ -139,7 +139,7 @@ class HomeViewModel: ObservableObject {
         let featuredCount = min(3, products.count)
         let featuredIndexes = Set((0..<products.count).shuffled().prefix(featuredCount))
 
-        for (index, product) in products.enumerated() {
+        for (index, _) in products.enumerated() {
             products[index].isFeatured = featuredIndexes.contains(index)
         }
 
